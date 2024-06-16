@@ -3,6 +3,8 @@ const cors = require("cors");
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const productRoutes = require('./routes/productRoutes');
+const orderRoutes = require('./routes/orderRoutes');
+
 const bodyParser = require("body-parser");
 
 const { initializeSuperAdmin } = require("./services/superAdmin");
@@ -23,6 +25,8 @@ startServer();
 app.use('/api/', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/product', productRoutes);
+app.use('/api/order', orderRoutes);
+
 
 
 

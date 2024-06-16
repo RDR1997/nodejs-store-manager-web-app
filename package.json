@@ -17,6 +17,7 @@
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.10.0",
+    "pdfkit": "^0.8.0",
     "sequelize": "^6.37.3",
     "simple-barcode-scanner": "^2.0.0",
     "validator": "^13.11.0"
