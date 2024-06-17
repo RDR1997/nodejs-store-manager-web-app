@@ -350,3 +350,57 @@ module.exports.brand_post = async (req, res) => {
         res.status(401).json({ error: error.message }); // Changed status to 401 for unauthorized
     }
 }
+
+module.exports.distributors_get = async (req, res) => {
+
+    try {
+        try {
+            const connection = await pool.getConnection();
+            const [brands] = await connection.query(
+                "SELECT * FROM distributors"
+            );
+
+            res.status(200).json({
+
+                brands
+            });
+            connection.release();
+        } catch (error) {
+            console.log(error.message);
+            res.status(400).json({ error: error.message });
+        }
+    } catch (error) {
+        console.log(error.message);
+        res.status(401).json({ error: error.message }); // Changed status to 401 for unauthorized
+    }
+}
+
+module.exports.distributor_post = async (req, res) => {
+
+    try {
+        const { name, phoneNo, note } = req.body;
+        try {
+
+            const connection = await pool.getConnection();
+            const [result] = await connection.execute(
+                "INSERT INTO distributors ( name, phoneNo, note, created_by, created_date) VALUES (?, ?, ?, ?, ?)",
+                [
+                    name,
+                    phoneNo,
+                    note,
+                    id,
+                    now
+                ]
+            );
+
+            res.status(200).json({ massage: 'Brand was successfully added' });
+            connection.release();
+        } catch (error) {
+            console.log(error.message);
+            res.status(400).json({ error: error.message });
+        }
+    } catch (error) {
+        console.log(error.message);
+        res.status(401).json({ error: error.message }); // Changed status to 401 for unauthorized
+    }
+}
