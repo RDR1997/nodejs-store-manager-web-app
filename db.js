@@ -49,10 +49,11 @@ async function createTables() {
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 name VARCHAR(255) NOT NULL,
                 other_name VARCHAR(255),
-                brand VARCHAR(255) NOT NULL,
+                brand_id INT NOT NULL,
                 model VARCHAR(255) NOT NULL,
                 price INT NOT NULL,
                 quantity INT NOT NULL,
+                distributor_id INT NOT NULL,
                 note TEXT ,
                 category_id INT NOT NULL,
                 section_id INT,
@@ -61,6 +62,8 @@ async function createTables() {
                 modified_by INT,
                 modified_date DATETIME,
                 CONSTRAINT fk_products_created_by FOREIGN KEY (created_by) REFERENCES users(id),
+                CONSTRAINT fk_products_brand_id FOREIGN KEY (brand_id) REFERENCES brand(id),
+                CONSTRAINT fk_products_distributor_id FOREIGN KEY (distributor_id) REFERENCES distributor(id),
                 CONSTRAINT fk_products_modified_by FOREIGN KEY (modified_by) REFERENCES users(id)
             )
         `);
@@ -111,6 +114,28 @@ async function createTables() {
                 CONSTRAINT fk_product_images_product_id FOREIGN KEY (product_id) REFERENCES products(id),
                 CONSTRAINT fk_product_images_created_by FOREIGN KEY (created_by) REFERENCES users(id),
                 CONSTRAINT fk_product_images_modified_by FOREIGN KEY (modified_by) REFERENCES users(id)
+            )
+        `);
+
+        // Create brand table
+        await connection.query(`
+            CREATE TABLE IF NOT EXISTS brand (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name TEXT NOT NULL,
+                created_by INT NOT NULL,
+                created_date DATETIME NOT NULL,
+            )
+        `);
+
+        // Create distributor table
+        await connection.query(`
+            CREATE TABLE IF NOT EXISTS distributor (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name TEXT NOT NULL,
+                phoneNo TEXT NOT NULL,
+                note TEXT,
+                created_by INT NOT NULL,
+                created_date DATETIME NOT NULL,
             )
         `);
 
