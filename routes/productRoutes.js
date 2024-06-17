@@ -14,6 +14,10 @@ router.post('/product-images', requireAuth, productController.product_images_pos
 router.get('/product-images/:product_id', requireAuth, productController.product_images_get);
 router.delete('/product-images/:product_id', requireAuth, productController.product_images_delete);
 
+router.post('/brand', requireAuth, productController.brand_post);
+router.get('/brands', requireAuth, productController.brands_get);
+
+
 
 // generate barcode
 // Add images

@@ -62,8 +62,8 @@ async function createTables() {
                 modified_by INT,
                 modified_date DATETIME,
                 CONSTRAINT fk_products_created_by FOREIGN KEY (created_by) REFERENCES users(id),
-                CONSTRAINT fk_products_brand_id FOREIGN KEY (brand_id) REFERENCES brand(id),
-                CONSTRAINT fk_products_distributor_id FOREIGN KEY (distributor_id) REFERENCES distributor(id),
+                CONSTRAINT fk_products_brand_id FOREIGN KEY (brand_id) REFERENCES brands(id),
+                CONSTRAINT fk_products_distributor_id FOREIGN KEY (distributor_id) REFERENCES distributors(id),
                 CONSTRAINT fk_products_modified_by FOREIGN KEY (modified_by) REFERENCES users(id)
             )
         `);
@@ -119,7 +119,7 @@ async function createTables() {
 
         // Create brand table
         await connection.query(`
-            CREATE TABLE IF NOT EXISTS brand (
+            CREATE TABLE IF NOT EXISTS brands (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 name TEXT NOT NULL,
                 created_by INT NOT NULL,
@@ -129,7 +129,7 @@ async function createTables() {
 
         // Create distributor table
         await connection.query(`
-            CREATE TABLE IF NOT EXISTS distributor (
+            CREATE TABLE IF NOT EXISTS distributors (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 name TEXT NOT NULL,
                 phoneNo TEXT NOT NULL,
