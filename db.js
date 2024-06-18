@@ -55,8 +55,8 @@ async function createTables() {
                 quantity INT NOT NULL,
                 distributor_id INT NOT NULL,
                 note TEXT ,
-                category_id INT NOT NULL,
-                section_id INT,
+                rack_id INT,
+                rack_level INT,
                 created_by INT NOT NULL,
                 created_date DATETIME NOT NULL,
                 modified_by INT,
@@ -124,6 +124,8 @@ async function createTables() {
                 name TEXT NOT NULL,
                 created_by INT NOT NULL,
                 created_date DATETIME NOT NULL,
+                CONSTRAINT fk_brands_created_by FOREIGN KEY (created_by) REFERENCES users(id)
+
             )
         `);
 
@@ -136,6 +138,7 @@ async function createTables() {
                 note TEXT,
                 created_by INT NOT NULL,
                 created_date DATETIME NOT NULL,
+                CONSTRAINT fk_distributors_created_by FOREIGN KEY (created_by) REFERENCES users(id)
             )
         `);
 

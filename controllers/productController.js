@@ -1,44 +1,63 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { pool } = require("../db");
+const formidable = require('formidable');
 
 module.exports.product_post = async (req, res) => {
     try {
+        const form = new formidable.IncomingForm();
+        form.parse(req, async (err, fields, files) => {
+            if (err) {
+                console.error('Error parsing form data:', err);
+                res.status(400).json({ error: 'Error parsing form data' });
+                return;
+            }
 
-        const { id, role } = req.user;
-        const { name, other_name, brand, model, price, quantity, note, category_id, section_id } = req.body;
-        const now = new Date();
-
-        try {
-            const connection = await pool.getConnection();
-            const [result] = await connection.execute(
-                "INSERT INTO products ( name, other_name, brand, model, price, quantity, note, category_id, section_id,created_by,created_date) VALUES (?, ?, ?,?, ?, ?, ?, ?, ?,?,?)",
-                [
-                    name,
-                    other_name,
-                    brand,
-                    model,
-                    price,
-                    quantity,
-                    note,
-                    category_id,
-                    section_id,
-                    id,
-                    now
-                ]
-            );
-            res.status(200).json({ massage: 'Product was successfully added' });
-            connection.release();
-        } catch (error) {
-            console.log(error.message);
-            res.status(400).json({ error: error.message });
-        }
-
+            const { id, role } = req.user;
+            const now = new Date();
+            const {
+                name,
+                other_name,
+                brand,
+                model,
+                price,
+                quantity,
+                note,
+                rack_id,
+                rack_level,
+                distributor_id
+            } = fields; // Access parsed fields from form.parse
+            try {
+                const connection = await pool.getConnection();
+                const [result] = await connection.execute(
+                    "INSERT INTO products ( name, other_name, brand_id, model, price, quantity, distributor_id, note, rack_id, rack_level, created_by, created_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    [
+                        name[0],
+                        other_name[0],
+                        brand[0],
+                        model[0],
+                        price[0],
+                        quantity[0],
+                        distributor_id[0],
+                        note[0],
+                        rack_id[0],
+                        rack_level[0],
+                        id,
+                        now
+                    ]
+                );
+                res.status(200).json({ message: 'Product was successfully added' });
+                connection.release();
+            } catch (error) {
+                console.error('Error executing SQL query:', error);
+                res.status(400).json({ error: 'Error executing SQL query' });
+            }
+        });
     } catch (error) {
-        console.log(error.message);
-        res.status(401).json({ error: error.message }); // Changed status to 401 for unauthorized
+        console.error('Error parsing form:', error);
+        res.status(500).json({ error: 'Error parsing form' });
     }
-}
+};
 
 module.exports.product_put = async (req, res) => {
     try {
@@ -82,7 +101,9 @@ module.exports.product_get = async (req, res) => {
     try {
         const connection = await pool.getConnection();
         const [products] = await connection.query(
-            "SELECT * FROM products"
+            // "SELECT * FROM products"
+            "SELECT products.*, brands.name AS brandName FROM products JOIN brands ON products.brand_id = brands.id"
+
         );
 
         const productIds = products.map(product => product.id);
@@ -327,11 +348,13 @@ module.exports.brand_post = async (req, res) => {
 
     try {
         const { name } = req.body;
+        const { id } = req.user;
+        const now = new Date();
         try {
 
             const connection = await pool.getConnection();
             const [result] = await connection.execute(
-                "INSERT INTO products ( name, created_by, created_date) VALUES (?, ?, ?)",
+                "INSERT INTO brands ( name, created_by, created_date) VALUES (?, ?, ?)",
                 [
                     name,
                     id,
@@ -356,13 +379,13 @@ module.exports.distributors_get = async (req, res) => {
     try {
         try {
             const connection = await pool.getConnection();
-            const [brands] = await connection.query(
+            const [distributors] = await connection.query(
                 "SELECT * FROM distributors"
             );
 
             res.status(200).json({
 
-                brands
+                distributors
             });
             connection.release();
         } catch (error) {
@@ -379,6 +402,8 @@ module.exports.distributor_post = async (req, res) => {
 
     try {
         const { name, phoneNo, note } = req.body;
+        const { id } = req.user;
+        const now = new Date();
         try {
 
             const connection = await pool.getConnection();
