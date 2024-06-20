@@ -2,15 +2,29 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { pool } = require("../db");
 const formidable = require('formidable');
+const AWS = require('aws-sdk');
+const fs = require('fs');
+
+// Configure AWS S3
+const s3 = new AWS.S3({
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    region: process.env.AWS_REGION
+});
 
 module.exports.product_post = async (req, res) => {
     try {
         const form = new formidable.IncomingForm();
+        form.multiples = true;
         form.parse(req, async (err, fields, files) => {
             if (err) {
                 console.error('Error parsing form data:', err);
                 res.status(400).json({ error: 'Error parsing form data' });
                 return;
+            }
+            if (!files.images) {
+                console.error('No files found');
+                return res.status(400).send('No files uploaded');
             }
 
             const { id, role } = req.user;
@@ -27,6 +41,8 @@ module.exports.product_post = async (req, res) => {
                 rack_level,
                 distributor_id
             } = fields; // Access parsed fields from form.parse
+
+
             try {
                 const connection = await pool.getConnection();
                 const [result] = await connection.execute(
@@ -46,12 +62,86 @@ module.exports.product_post = async (req, res) => {
                         now
                     ]
                 );
-                res.status(200).json({ message: 'Product was successfully added' });
+
+
+                // res.status(200).json({ message: 'Product was successfully added' });
                 connection.release();
             } catch (error) {
                 console.error('Error executing SQL query:', error);
                 res.status(400).json({ error: 'Error executing SQL query' });
             }
+
+            try {
+
+                const fileArray = Array.isArray(files.images) ? files.images : [files.images];
+                const uploadPromises = fileArray.map(file => {
+                    const fileStream = fs.createReadStream(file.filepath);
+                    const params = {
+                        Bucket: 'office-app-images',
+                        Key: `${Date.now()}-${file.originalFilename}`,
+                        Body: fileStream,
+                        ContentType: file.mimetype,
+
+                    };
+                    return s3.upload(params).promise();
+                });
+
+                const uploadResults = await Promise.all(uploadPromises);
+                const imageUrls = uploadResults.map(result => result.Location);
+                const connection = await pool.getConnection();
+                const currentime = now.toLocaleString().slice(0, 20).replace('T', ' ')
+                const [datePart, timePart] = currentime.split(', ');
+                const [day, month, year] = datePart.split('/');
+                const formattedDatetime = `${year}-${month}-${day} ${timePart}`;
+
+                const [product_id] = await connection.query(
+                    "SELECT id FROM products WHERE created_by=? AND created_date=?",
+                    [id, formattedDatetime]
+                );
+
+                // Insert image URLs into the database
+                const productId = product_id[0].id; 
+                console.log(imageUrls);
+                if (!imageUrls) {
+                    throw Error("Images does not exists");
+                } else {
+                    for (const imageUrl of imageUrls) {
+                        console.log(
+                            imageUrl,
+                            id,
+                            now)
+                        const [images] = await connection.execute(
+                            "INSERT INTO product_images (product_id, image_url, created_by, created_date) VALUES (?, ?, ?, ?)",
+                            [
+                                productId, imageUrl, id, now
+                            ]
+                        );
+
+                    }
+                }
+                // const insertPromises = imageUrls.map(url => {
+                //     return new Promise((resolve, reject) => {
+                //         connection.query(
+                //             'INSERT INTO product_images (product_id, image_url, created_by, created_date) VALUES (?, ?, ?, ?)',
+                //             [productId, url, id, now],
+                //             (error, results) => {
+                //                 if (error) reject(error);
+                //                 resolve(results);
+                //             }
+                //         );
+                //     });
+                // });
+
+                // await Promise.all(insertPromises);
+
+                connection.release();
+            } catch (error) {
+                console.error(error);
+                res.status(500).send('Error uploading images');
+            }
+            console.log('Product was successfully added');
+            res.status(200).send('Product was successfully added');
+
         });
     } catch (error) {
         console.error('Error parsing form:', error);
